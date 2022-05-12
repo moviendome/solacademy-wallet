@@ -6,6 +6,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {C} from '../common';
 
 import {
+  OnboardingScreen,
   DashboardScreen,
   CollectiblesScreen,
   SwapScreen,
@@ -17,6 +18,8 @@ import {
 
 import {RootStackParamList, RootTabParamList, RootTabScreenProps} from '../types';
 import LinkingConfiguration from './LinkingConfiguration';
+
+import { useStoreState } from "../hooks/storeHooks";
 
 const {THEME} = C;
 
@@ -33,15 +36,25 @@ export default function Navigation() {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  return (
-    <Stack.Navigator>
-      <Stack.Screen name='Root' component={BottomTabNavigator} options={{headerShown: false}} />
-      <Stack.Screen name='NotFound' component={NotFoundScreen} options={{title: 'Oops!'}} />
-      <Stack.Group screenOptions={{presentation: 'modal', headerShown: false}}>
-        <Stack.Screen name='Modal' component={ModalScreen} />
-      </Stack.Group>
-    </Stack.Navigator>
-  );
+  const hasWallet = useStoreState((state) => state.hasWallet);
+
+  if (hasWallet) {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen name='Root' component={BottomTabNavigator} options={{headerShown: false}} />
+        <Stack.Screen name='NotFound' component={NotFoundScreen} options={{title: 'Oops!'}} />
+        <Stack.Group screenOptions={{presentation: 'modal', headerShown: false}}>
+          <Stack.Screen name='Modal' component={ModalScreen} />
+        </Stack.Group>
+      </Stack.Navigator>
+    );
+  } else {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen name="onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    )
+  }
 }
 
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
