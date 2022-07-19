@@ -1,4 +1,5 @@
-import {Image} from 'react-native';
+import React, { useEffect, useCallback, useState } from 'react';
+import { Image } from 'react-native';
 
 import {
   Block,
@@ -13,27 +14,88 @@ import {
   Wrapper
 } from '../components';
 
-import {C} from '../common';
+import { C } from '../common';
 
-import {RootTabScreenProps} from '../types';
+import { RootTabScreenProps } from '../types';
 
-export default function DashboardScreen({navigation}: RootTabScreenProps<'Dashboard'>) {
-  const {THEME} = C;
+import { useStoreState } from '../hooks/storeHooks';
+import { accountFromSeed, maskedAddress } from '../utils';
+
+import {
+  getBalance,
+  getSolanaPrice,
+} from '../api';
+import { useFocusEffect } from '@react-navigation/native';
+
+export default function DashboardScreen({ navigation }: RootTabScreenProps<'Dashboard'>) {
+  const { THEME } = C;
+
+  const wallet = useStoreState((state) => state.wallet);
+  const accounts = useStoreState((state) => state.accounts);
+
+  const [account, setAccount] = useState({});
+
+  useEffect(() => {
+    async function generate() {
+      const currentAccount = accounts[0];
+      setAccount({
+        index: currentAccount.index,
+        title: currentAccount.title,
+        keyPair: accountFromSeed(
+          wallet.seed,
+          currentAccount.index,
+          currentAccount.derivationPath,
+          0
+        ),
+      });
+    }
+
+    generate();
+  }, []);
+
+  const [balance, setBalance] = useState({
+    usd: 0.0,
+    sol: 0
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      async function getAsyncBalance() {
+        if (account?.keyPair?.publicKey?.toString()) {
+          const sol = await getBalance(account.keyPair.publicKey.toString());
+          const usdPrice = await getSolanaPrice();
+
+          setBalance({
+            sol,
+            usd: (sol * usdPrice).toFixed(2),
+          });
+        }
+      }
+      getAsyncBalance();
+    }, [account])
+  );
 
   const assets = [
     {
       id: 1,
-      name: 'Solana',
-      symbol: 'SOL',
+      name: "Solana",
+      symbol: "SOL",
       decimals: 9,
-      logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png',
+      logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
     },
     {
       id: 2,
-      name: 'USDC Coin',
-      symbol: 'USDC',
+      name: "USDC Coin",
+      symbol: "USDC",
       decimals: 6,
-      logoURI: 'https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png',
+      logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+    },
+    {
+      id: 3,
+      name: "Samoyed Coin",
+      symbol: "SAMO",
+      decimals: 9,
+      logoURI: "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU/logo.png",
     },
   ];
 
@@ -43,8 +105,8 @@ export default function DashboardScreen({navigation}: RootTabScreenProps<'Dashbo
         <Block>
           <Wrapper>
             <Header
-              title='$1.050,00'
-              subtitle='9CKN...XCRA'
+              title={`$${balance.usd}`}
+              subtitle={maskedAddress(account?.keyPair?.publicKey?.toString())}
             />
           </Wrapper>
         </Block>
@@ -80,33 +142,16 @@ export default function DashboardScreen({navigation}: RootTabScreenProps<'Dashbo
                   key={assets[0].id}
                   left={
                     <Image
-                      style={{width: 30, height: 30, resizeMode: 'stretch'}}
+                      style={{ width: 30, height: 30, resizeMode: 'stretch' }}
                       source={{
                         uri: assets[0].logoURI
                       }}
                     />
                   }
                   title={assets[0].name}
-                  subtitle={`4.4626 ${assets[0].symbol}`}
+                  subtitle={`${balance?.sol} ${assets[0].symbol}`}
                   onPress={() => console.log('Pressed!')}
-                  amount="$404.01"
-                />
-
-                <ListItem
-                  key={assets[1].id}
-                  left={
-                    <Image
-                      style={{width: 30, height: 30, resizeMode: 'stretch'}}
-                      source={{
-                        uri: assets[1].logoURI
-                      }}
-                    />
-                  }
-                  title={assets[1].name}
-                  subtitle={`10.38211 ${assets[1].symbol}`}
-                  onPress={() => console.log('Pressed!')}
-                  amount="$10.38"
-                  last
+                  amount={balance?.usd ? `$${balance.usd}` : '-'}
                 />
               </List>
             </Wrapper>
