@@ -34,11 +34,24 @@ const publicKeyFromString = (publicKeyString: string) => {
   return new solanaWeb3.PublicKey(publicKeyString);
 };
 
+const requestAirdrop = async (publicKeyString: string) => {
+  const connection = createConnection();
+
+  const airdropSignature = await connection.requestAirdrop(
+    publicKeyFromString(publicKeyString),
+    LAMPORTS_PER_SOL
+  );
+
+  const signature = await connection.confirmTransaction(airdropSignature);
+  return signature;
+};
+
 export {
   LAMPORTS_PER_SOL,
   createConnection,
   getBalance,
   getSolanaPrice,
   publicKeyFromString,
+  requestAirdrop,
 };
 

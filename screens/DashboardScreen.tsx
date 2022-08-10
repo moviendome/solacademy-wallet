@@ -24,6 +24,7 @@ import { accountFromSeed, maskedAddress } from '../utils';
 import {
   getBalance,
   getSolanaPrice,
+  requestAirdrop,
 } from '../api';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -99,6 +100,23 @@ export default function DashboardScreen({ navigation }: RootTabScreenProps<'Dash
     },
   ];
 
+  const getAirdrop = async () => {
+    const address = account.keyPair.publicKey.toString();
+
+    console.log("Requesting Airdrop...")
+
+    await requestAirdrop(address);
+    const sol = await getBalance(address);
+    const usdPrice = await getSolanaPrice();
+
+    console.log("Setting updated balance...")
+
+    setBalance({
+      sol,
+      usd: (sol * usdPrice).toFixed(2),
+    });
+  }
+
   return (
     <Container>
       <Gradient colors={THEME.GRADIENT}>
@@ -115,7 +133,7 @@ export default function DashboardScreen({ navigation }: RootTabScreenProps<'Dash
           <Column half first>
             <Button
               color={THEME.PRIMARY}
-              onPress={() => console.log('Receive Pressed!')}
+              onPress={() => getAirdrop()}
             >
               Receive
             </Button>
